@@ -1,0 +1,10 @@
+az_min	az_max	el_min	el_max	f_min	f_max	RFI
+231.2	241.7	6.0	60	0.360	0.380	MUOS downlink
+142.899	142.901	0.0	90	0.40149	0.40151	Remote weather station
+292.3	292.9	6.0	63	1.274	1.345	Radar 123^ AM Capo Frasca
+33.9	34.6	30.0	45	1.290	1.384	Jammer AM
+161.4	163.1	6.0	28	4.948	5.016	Serpeddì HiperLan
+344.199	344.201	6.0	37	5.640	5.641	SAR weather radar
+252.299	252.301	6.0	48	5.642	5.6425	PC weather radar
+324.6	325.2	6.0	19.0	5.980	5.988	RAI system (dorsal link)
+351.799	351.801	6.0	25	19.745	19.765	RAI branch
