@@ -1,0 +1,13 @@
+numpy       v 1.26
+tk          v 8
+tkmacosx    v 0.1.6
+pillow      v 9
+astropy     v 6
+matplotlib  v 3.8
+pydub       v 0.25
+gtts        v 2.5
+pytz        v 2024.1
+ephem       v 4.1
+astroquery  v 0.4.7
+skyfield    v 1.45
+sunpy       v 5.1
