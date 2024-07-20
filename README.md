@@ -25,7 +25,7 @@ load the new environment:
 
 and install the dependencies (including a few optional but recommended):
 
-    (py3) $ conda install numpy, astropy, datetime, pytz, time, ephem, sched, threading, socket, os, tkinter, tkmacosx, PIL, gtts
+    (py3) $ conda install numpy, astropy, datetime, pytz, time, sched, threading, socket, os, tkinter, tkmacosx, PIL, gtts
 
 and
     (py3) $ sudo apt-get install ffmpeg libavcodec-extra
@@ -58,7 +58,7 @@ or if you have deployed your SSH key to Github:
 Then:
 
     (py3) $ cd Showtel
-    (py3) $ python showtel_v04.py
+    (py3) $ python showtel_v03.py
 
 
 ### Updating
