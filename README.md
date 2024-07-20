@@ -28,6 +28,7 @@ and install the dependencies (including a few optional but recommended):
     (py3) $ conda install numpy, astropy, datetime, pytz, time, sched, threading, socket, os, tkinter, tkmacosx, PIL, gtts
 
 and
+
     (py3) $ sudo apt-get install ffmpeg libavcodec-extra
     (py3) $ pip install pydub
 
