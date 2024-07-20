@@ -36,9 +36,11 @@ and
 
 ##### Download of the de441.bsp ephemeris
 You must to download the de441.bsp ephemeris following this procedure in ipython environment:
+
     In [1]: from astropy.coordinates import solar_system_ephemeris
 
 and
+
     In [2]: solar_system_ephemeris.set("ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de441.bsp")
 
 Once you downloaded this file (3.3 GB), you must put this file in the directory "utilities".
