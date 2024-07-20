@@ -3,15 +3,13 @@ from numpy import deg2rad
 from astropy import units as u
 from astropy.coordinates import Angle, angular_separation
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
-from astropy.coordinates import get_sun, get_moon
 from astropy.coordinates import solar_system_ephemeris, get_body_barycentric, get_body
 from astropy.time import Time
 from astropy.constants import au
 
 from datetime import datetime, timedelta
-import pytz, time, ephem, sched, threading, socket, os
+import pytz, time, sched, threading, socket, os
 
-from astropy.coordinates import solar_system_ephemeris
 solar_system_ephemeris.set('jpl')
 
 from tkinter import *
@@ -28,16 +26,15 @@ from utilities.showtel_connection import *
 from utilities.showtel_discos import *
 from utilities.showtel_sound import *
 from utilities.showtel_distance import *
-#from utilities.showtel_switch import *
 from utilities.showtel_forbidden import *
 from utilities.showtel_plots import *
 
 import warnings
 warnings.filterwarnings("ignore")
 
-update = '2024/06/13'
+update = '2024/07/20'
 radiotelescope = 'SRT'                                                                     # SRT or Medicina
-delta_time = 4                                                                             # in seconds
+delta_time = 5                                                                             # in seconds
 
 tot_eph_h = 24                                                                             # duration of the solar map [in units of hours, float]
 step_eph_min = 30                                                                          # step time [in units of minutes, int]
@@ -106,9 +103,9 @@ def loop(s):
     elif data_input["visibility"] == "NORTH":
         vis_mode = 'N'
 
-    if data_input["quality"] == "LQ":
+    if data_input["quality"] == "AS":
         q_mode = 1
-    elif data_input["quality"] == "HQ":
+    elif data_input["quality"] == "SK":
         q_mode = 2
         
     if stato == 0 or running == False:
@@ -209,7 +206,7 @@ def loop(s):
             time_arr = loc_time(time_utc, radiotelescope)
 
             receiver_code = str(arr_dict['ReceiverCode'])
-            name_source = str(arr_dict['SourceNameMn'])
+            name_source = str(arr_dict['SourceName'])
             
             #arr_dict['Azimuth'] = '140'    # TEST
             #arr_dict['Elevation'] = '37'   # TEST
@@ -238,16 +235,12 @@ def loop(s):
             pos_comm_radec = (tool_comm[5].ra.value, tool_comm[5].dec.value)
             tool_comm_radec, tool_comm_altaz = tool_comm[5], tool_comm[6]                  # SkyCoord coordinates
 
-            #dist_sun_pnt, dist_sun_source, dist_moon_pnt, dist_moon_source, tool = calc_angdist_radec(time_utc, radiotelescope, tool_live_radec, tool_source_radec, tot_eph_h, step_eph_min, q_mode)
-            #test = calc_angdist(time_utc, 'SRT', az0_live, el0_live, az_comm, el_comm)
-            #dist_sun_now, dist_sun_com, dist_moon_now, dist_moon_com = test[0], test[1], test[2], test[3]
             dist_sun_pnt, dist_sun_source, dist_moon_pnt, dist_moon_source, tool = calc_angdist_altaz(time_utc, radiotelescope, tool_live_altaz, tool_comm_altaz, tot_eph_h, step_eph_min, q_mode)
 
             if q_mode == 2:
                 # HQ-mode
                 result_ref_sunmoon = tool[6]
                 pos_sun, pos_moon = (tool[3].az.value, tool[3].alt.value), (tool[5].az.value, tool[5].alt.value)
-                #sun_eph, moon_eph, sun_eph_radec, sun_eph_altaz, moon_eph_radec, moon_eph_altaz, result_sunmoon = horizon_eph(tot_eph_h, time_arr[3], radiotelescope, step_eph_min)
                 sun_eph, moon_eph, sun_eph_radec, sun_eph_altaz, moon_eph_radec, moon_eph_altaz, result_sunmoon = skyfield_eph(tot_eph_h, time_arr[3], radiotelescope, step_eph_min)
             elif q_mode == 1:
                 # LQ-mode
@@ -257,10 +250,15 @@ def loop(s):
                 sun_eph_radec, sun_eph_altaz, moon_eph_radec, moon_eph_altaz, result_sunmoon = tool[0], tool[1], tool[2], tool[3], tool[4]
 
             try:
-                rfi_yes, rfi_source, rfi_tab, rfi_freq = tool_rfi(az_live, el_live, receiver_code, file_rfi, file_rec)
+                rfi_yes, rfi_source, rfi_sp, rfi_tab, rfi_freq = tool_rfi(az_live, el_live, receiver_code, file_rfi, file_rec)
             except:
-                rfi_yes, rfi_source, rfi_tab, rfi_freq = 0, 'clean', 'no_tab', 'no_tab'
+                rfi_yes, rfi_source, rfi_sp, rfi_tab, rfi_freq = 0, 'clean', '', 'no_tab', 'no_tab'
 
+            if rfi_yes == 1 and rfi_sp != '':
+                rfi_text = str(rfi_source[0]) + ' (' + str(rfi_sp[0]) + ')'
+            else:
+                rfi_text = rfi_source
+                
             try:
                 evo_az_source, evo_el_source, source_timevo, timevo_min, timevo_max, evo_radec, evo_altaz = coord_altaz2radec(time_arr[3], (el_comm, az_comm), result_sunmoon[:,0], radiotelescope, 1)
             except:
@@ -271,10 +269,10 @@ def loop(s):
                 plot_radar(file_sys, time_arr[3], name_source, pos_live, pos_comm, result_ref_sunmoon, result_sunmoon, pos_source_evo, source_timevo, timevo_min, timevo_max, 0, 0, rfi_tab, rfi_freq, 70, vis_mode)
                 if (dist_sun_pnt.value <= 40) & (dist_sun_pnt.value >= 10):
                     txt_dist_box = Entry(tool2l_bar, width=len_box-8, textvariable=var_dist, bg="yellow", fg="black").place(in_=tool2l_bar, relx=0.70, rely=0.35, anchor=W)
-                    log_action('WARNING: The distance SRT-SUN is between 5 and 10 deg!','yellow')
-                    play(sound_alarm(file_alarm, 2))
+                    log_action('WARNING: The distance SRT-SUN is between 10 and 40 deg!','yellow')
+                    #play(sound_alarm(file_alarm, 2))
                 elif (dist_sun_pnt.value < 10):
-                    log_action('ALERT: The distance SRT-SUN is less than 5 deg!','red')
+                    log_action('ALERT: The distance SRT-SUN is less than 10 deg!','red')
                     txt_dist_box = Entry(tool2l_bar, width=len_box-8, textvariable=var_dist, bg="red", fg="white").place(in_=tool2l_bar, relx=0.70, rely=0.35, anchor=W)
                     play(sound_alarm(file_alarm, 2))
                 else:
@@ -315,22 +313,22 @@ def loop(s):
             # Box - left
             var_time.set(time_utc)                                                         # set default path
             var_time_lst.set(time_arr[4])                                                  # set default path
-            var_stat.set(arr_dict['SystemStatusMn'])                                       # set default path
+            var_stat.set(arr_dict['SystemStatus'])                                         # set default path
 
             wi2, he2, r2 = 15, 15, 7
             canvas_stat = tk.Canvas(tool3_bar, width=wi2, height=he2, borderwidth=0, bg='SkyBlue1', highlightbackground = 'SkyBlue1')   # Create 200x200 Canvas widget
             canvas_stat.place(relx=0.42, rely=0.33)
             oval_stat = canvas_stat.create_oval(wi2/2-r2, he2/2+r2, wi2/2+r2, he2/2-r2)    # Create a circle on the Canvas
             
-            if arr_dict['SystemStatusMn'] == 'OK':
+            if arr_dict['SystemStatus'] == 'OK':
                 sys_status = 'OK'
                 canvas_stat.itemconfig(oval_stat, fill="green")                            # Fill the circle with GREEN
                 txt_stat_box = Entry(tool3_bar, width=len_box-3, textvariable=var_stat, bg="green", fg="white").place(in_=tool3_bar, relx=0.50, rely=0.40, anchor=W)
-            if arr_dict['SystemStatusMn'] == 'WARNING':
+            if arr_dict['SystemStatus'] == 'WARNING':
                 sys_status = 'WARNING'
                 canvas_stat.itemconfig(oval_stat, fill="yellow")                           # Fill the circle with YELLOW
                 txt_stat_box = Entry(tool3_bar, width=len_box-3, textvariable=var_stat, bg="yellow", fg="black").place(in_=tool3_bar, relx=0.50, rely=0.40, anchor=W)
-            if arr_dict['SystemStatusMn'] == 'FAILURE':
+            if arr_dict['SystemStatus'] == 'FAILURE':
                 sys_status = 'FAILURE'
                 canvas_stat.itemconfig(oval_stat, fill="red")                              # Fill the circle with RED
                 txt_stat_box = Entry(tool3_bar, width=len_box-3, textvariable=var_stat, bg="red", fg="white").place(in_=tool3_bar, relx=0.50, rely=0.40, anchor=W)
@@ -349,10 +347,10 @@ def loop(s):
                             play(sound_voice(file_failure))
                             log_action('DISCOS system is in FAILURE status!','red')
 
-            var_pntg.set(arr_dict['PointingStatusMn'])                                     # set default path
-            if arr_dict['PointingStatusMn'] == 'TRACKING':
+            var_pntg.set(arr_dict['PointingStatus'])                                       # set default path
+            if arr_dict['PointingStatus'] == 'TRACKING':
                 txt_pntg_box = Entry(tool3_bar, width=len_box-3, textvariable=var_pntg, bg="green", fg="white").place(in_=tool3_bar, relx=0.50, rely=0.60, anchor=W)
-            if arr_dict['PointingStatusMn'] == 'SLEWING':
+            if arr_dict['PointingStatus'] == 'SLEWING':
                 txt_pntg_box = Entry(tool3_bar, width=len_box-3, textvariable=var_pntg, bg="yellow", fg="black").place(in_=tool3_bar, relx=0.50, rely=0.60, anchor=W)
 
             var_rec.set(receiver_code)                                                     # set default path
@@ -371,16 +369,16 @@ def loop(s):
             var_point_az.set(az0_live)                                                     # set default path
             var_point_el.set(el0_live)                                                     # set default path
 
-            #print(ra0_source)                                                   # set default path
-            #print(dec0_source)                                                 # set default path
-            #print(az0_live)                                                     # set default path
-            #print(el0_live)                                                     # set default path
+            #print(ra0_source)                                                              # set default path
+            #print(dec0_source)                                                             # set default path
+            #print(az0_live)                                                                # set default path
+            #print(el0_live)                                                                # set default path
 
             canvas_stat2 = tk.Canvas(tool4l_bar, width=wi2, height=he2, borderwidth=0, bg='SkyBlue1', highlightbackground = 'SkyBlue1')  # Create 200x200 Canvas widget
             canvas_stat2.place(relx=0.215, rely=0.502)
             oval_stat2 = canvas_stat2.create_oval(wi2/2-r2, he2/2+r2, wi2/2+r2, he2/2-r2)  # Create a circle on the Canvas
 
-            var_rfi.set(rfi_source)                                                        # set default path
+            var_rfi.set(rfi_text)                                                          # set default path
             if rfi_source[0] == '':
                 txt_rfi_box = Entry(tool4l_bar, width=len_box+22, textvariable='', bg="green").place(in_=tool4l_bar, relx=0.265, rely=0.65, anchor=W)
                 canvas_stat2.itemconfig(oval_stat2, fill="green")                          # Fill the circle with GREEN
@@ -389,7 +387,7 @@ def loop(s):
                 canvas_stat2.itemconfig(oval_stat2, fill="yellow")                         # Fill the circle with YELLOW
             
             # Box - top
-            var_name_source.set(arr_dict['SourceNameMn'])                                  # set default path
+            var_name_source.set(arr_dict['SourceName'])                                    # set default path
             var_point_az_c.set(az_comm)                                                    # set default path
             var_point_el_c.set(el_comm )                                                   # set default path
             #var_point_ra_c.set(ra0_source)                                                 # set default path
@@ -403,13 +401,13 @@ running = True
 
 # Creation of the widget
 root = Tk()                                                                                # Set Tk instance
-root.title("Showtel v 0.4")
+root.title("Showtel v 0.3")
 root.geometry("1128x810")                                                                  # Set the starting size of the window
 root.maxsize(1500, 1000)                                                                   # width x height
 root.config(bg="DeepSkyBlue3")
 
 data_input = {}
-data_input.update({"app": 'DISCOS', "Status": "", "mode": "NO SOLAR - other", "visibility": "SOUTH", "mem_status": [], "mem_sys": [], "quality": 'LQ'})
+data_input.update({"app": 'DISCOS', "Status": "", "mode": "NO SOLAR - other", "visibility": "SOUTH", "mem_status": [], "mem_sys": [], "quality": 'AS'})
 
 stile = "Verdana"
 dimensione = 10
@@ -610,16 +608,16 @@ log_action('South sky visibility mode is selected by default','brown')
 def change_quality(choice_quality):
     choice_quality = quality_var.get()
     data_input.update({"quality": choice_quality})
-    if choice_quality == 'LQ':
+    if choice_quality == 'AS':
         quality_menu.config(bg="brown", fg="white", activebackground="brown", activeforeground="white")
-        log_action('"astropy/JPL-NASA [LQ]" mode is selected','brown')
-    elif choice_quality == 'HQ':
+        log_action('"astropy/JPL-NASA [AS]" mode is selected','brown')
+    elif choice_quality == 'SK':
         quality_menu.config(bg="white", fg="brown", activebackground="white", activeforeground="brown")
-        log_action('"skyfield/JPL-NASA [HQ]" mode is selected','brown')
+        log_action('"skyfield/JPL-NASA [SK]" mode is selected','brown')
 
     return choice_quality
 
-quality = ['LQ', 'HQ']
+quality = ['AS', 'SK']
 quality_var = StringVar()
 quality_var.set(quality[0])
 
@@ -628,7 +626,7 @@ quality_menu.place(in_=tool2_bar, relx=0.73, rely=0.32)
 quality_menu.config(bg="white", fg="brown", activebackground="white", activeforeground="brown")
 #############################################
 
-log_action('"astropy/JPL-NASA [LQ]" mode is selected by default','brown')
+log_action('"astropy/JPL-NASA [AS]" mode is selected by default','brown')
 
 
 # Up - left #################################

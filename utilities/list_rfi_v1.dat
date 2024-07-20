@@ -1,7 +1,7 @@
 az_min	az_max	el_min	el_max	f_min	f_max	RFI	Spectrum
 231.2	241.7	6.0	60	0.360	0.380	MUOS downlink	Y
 142.899	142.901	0.0	90	0.40149	0.40151	Remote weather station	Y
-292.3	292.9	6.0	63	1.274	1.345	Radar	YNI
+292.3	292.9	6.0	63	1.274	1.345	Radar	Y
 33.9	34.6	30.0	45	1.290	1.384	Jammer AM	Y
 161.4	163.1	6.0	28	4.948	5.016	Serpeddì HiperLan	Y
 344.199	344.201	6.0	37	5.640	5.641	SAR weather radar	Y

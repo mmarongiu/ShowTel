@@ -81,4 +81,4 @@ First of all... **This code is under development!**... so, it might well be that
 
 If you used this software package to reduce data for a publication, please write in the acknowledgements something along these lines:
 
-    This work makes use of the [ShowTel](https://github.com/mmarongiu/ShowTel)# ShowTel
+    This work makes use of the ShowTel tool (https://github.com/mmarongiu/ShowTel)

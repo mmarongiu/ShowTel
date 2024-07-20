@@ -18,19 +18,19 @@ def tool_rfi(az, el, name_ric, path_rfi, path_rec):
     freq_min_rec, freq_max_rec = tab_rec['f_min'], tab_rec['f_max']
     freq_min_rfi, freq_max_rfi = tab_rfi['f_min'], tab_rfi['f_max']
 
-    #mask_freq = (tab_rfi['freq'] >= tab_rec['f_min']) & (tab_rfi['freq'] <= tab_rec['f_max'])
     mask_freq = (freq_min_rec <= freq_max_rfi) & (freq_max_rec >= freq_min_rfi)
     tab_freq = tab_rfi[mask_freq]
 
-    #mask_tot = (az >= tab_rfi['az_min']) & (az <= tab_rfi['az_max']) & (el >= tab_rfi['el_min']) & (el <= tab_rfi['el_max']) & (tab_rfi['freq'] >= tab_rec['f_min']) & (tab_rfi['freq'] <= tab_rec['f_max'])
     mask_tot = (az >= tab_rfi['az_min']) & (az <= tab_rfi['az_max']) & (el >= tab_rfi['el_min']) & (el <= tab_rfi['el_max']) & (freq_min_rec <= freq_max_rfi) & (freq_max_rec >= freq_min_rfi)
     tab_tot = tab_rfi[mask_tot]
 
     if len(tab_tot) == 0:
         rfi = 0
         rfi_name = ['']
+        rfi_sp = ['']
     else:
         rfi = 1
         rfi_name = np.array(tab_tot['RFI'])
+        rfi_sp = np.array(tab_tot['Spectrum'])
 
-    return rfi, rfi_name, tab_tot, tab_freq
+    return rfi, rfi_name, rfi_sp, tab_tot, tab_freq

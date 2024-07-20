@@ -1,11 +1,10 @@
 import matplotlib
 #matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, AutoMinorLocator, MultipleLocator
 import matplotlib.colors as colors
 from matplotlib.image import imread
 import matplotlib as mpl
-from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 from astropy.constants import *
 import numpy as np
 from .showtel_distance import *

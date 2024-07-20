@@ -1,7 +1,7 @@
 from astropy import units as u
 from astropy.coordinates import Angle, angular_separation
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
-from astropy.coordinates import get_sun, get_moon
+#from astropy.coordinates import get_sun, get_moon
 from astropy.coordinates import solar_system_ephemeris, get_body_barycentric, get_body
 from astropy.time import Time, TimeDelta
 from astropy.constants import au
@@ -12,9 +12,9 @@ import numpy as np
 from numpy import deg2rad
 
 from datetime import datetime, timedelta
-import pytz, time, ephem, sched#, sunpy
+import pytz, time, sched#ephem, sunpy
 
-from astropy.coordinates import solar_system_ephemeris
+#from astropy.coordinates import solar_system_ephemeris
 solar_system_ephemeris.set('jpl')
 
 from astroquery.jplhorizons import Horizons
