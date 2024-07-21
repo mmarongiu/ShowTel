@@ -208,8 +208,8 @@ def loop(s):
             receiver_code = str(arr_dict['ReceiverCode'])
             name_source = str(arr_dict['SourceName'])
             
-            #arr_dict['Azimuth'] = '140'    # TEST
-            #arr_dict['Elevation'] = '37'   # TEST
+            #arr_dict['Azimuth'] = '325'    # TEST
+            #arr_dict['Elevation'] = '12'   # TEST (mettere 12 per RFI)
 
             loc_site = time_arr[2]
             altaz = AltAz(obstime=time_arr[3], location=loc_site)
@@ -254,8 +254,15 @@ def loop(s):
             except:
                 rfi_yes, rfi_source, rfi_sp, rfi_tab, rfi_freq = 0, 'clean', '', 'no_tab', 'no_tab'
 
-            if rfi_yes == 1 and rfi_sp != '':
-                rfi_text = str(rfi_source[0]) + ' (' + str(rfi_sp[0]) + ')'
+            if str(rfi_sp[0]) == 'Y':
+                rfi_sp = 'S'
+            elif str(rfi_sp[0]) == 'N':
+                rfi_sp = ''
+            else:
+                rfi_sp = ''
+                
+            if rfi_yes == 1:
+                rfi_text = str(rfi_source[0]) + ' (' + rfi_sp + ')'
             else:
                 rfi_text = rfi_source
                 
