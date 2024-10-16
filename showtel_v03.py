@@ -39,7 +39,7 @@ delta_time = 5                                                                  
 tot_eph_h = 24                                                                             # duration of the solar map [in units of hours, float]
 step_eph_min = 30                                                                          # step time [in units of minutes, int]
 
-# installare:
+# install:
 # sudo apt-get install ffmpeg libavcodec-extra
 # pip install pydub
 # conda install gtts
@@ -207,6 +207,12 @@ def loop(s):
 
             receiver_code = str(arr_dict['ReceiverCode'])
             name_source = str(arr_dict['SourceName'])
+
+            tab_ric = Table.read(file_rec, format='ascii')
+            mask_ric = (receiver_code == tab_ric['nome'])
+            tab_ric_select = tab_ric[mask_ric]
+
+            thres_critic_ric, thres_standard_ric = float(tab_ric_select['cr_ric'][0]), float(tab_ric_select['st_ric'][0])
             
             #arr_dict['Azimuth'] = '325'    # TEST
             #arr_dict['Elevation'] = '12'   # TEST (mettere 12 per RFI)
@@ -274,11 +280,11 @@ def loop(s):
 
             if data_input['mode'] == 'NO SOLAR - other':
                 plot_radar(file_sys, time_arr[3], name_source, pos_live, pos_comm, result_ref_sunmoon, result_sunmoon, pos_source_evo, source_timevo, timevo_min, timevo_max, 0, 0, rfi_tab, rfi_freq, 70, vis_mode)
-                if (dist_sun_pnt.value <= 40) & (dist_sun_pnt.value >= 10):
+                if (dist_sun_pnt.value <= thres_standard_ric) & (dist_sun_pnt.value >= thres_critic_ric):
                     txt_dist_box = Entry(tool2l_bar, width=len_box-8, textvariable=var_dist, bg="yellow", fg="black").place(in_=tool2l_bar, relx=0.70, rely=0.35, anchor=W)
                     log_action('WARNING: The distance SRT-SUN is between 10 and 40 deg!','yellow')
                     #play(sound_alarm(file_alarm, 2))
-                elif (dist_sun_pnt.value < 10):
+                elif (dist_sun_pnt.value < thres_critic_ric):
                     log_action('ALERT: The distance SRT-SUN is less than 10 deg!','red')
                     txt_dist_box = Entry(tool2l_bar, width=len_box-8, textvariable=var_dist, bg="red", fg="white").place(in_=tool2l_bar, relx=0.70, rely=0.35, anchor=W)
                     play(sound_alarm(file_alarm, 2))
