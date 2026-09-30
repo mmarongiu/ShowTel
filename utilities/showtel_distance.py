@@ -6,13 +6,12 @@ from astropy.coordinates import solar_system_ephemeris, get_body_barycentric, ge
 from astropy.time import Time, TimeDelta
 from astropy.constants import au
 from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
-#from sunpy.coordinates import frames
 
 import numpy as np
 from numpy import deg2rad
 
 from datetime import datetime, timedelta
-import pytz, time, sched#ephem, sunpy
+import pytz, time, sched, os
 
 #from astropy.coordinates import solar_system_ephemeris
 solar_system_ephemeris.set('jpl')
@@ -31,9 +30,13 @@ def slr_station(radiot):
     return l, lat_site, lon_site, h_site
 
 
-def loc_time(datehour, rt):
+def loc_time(datehour, rt, type_conn):
     # datehour = 'yyyy-ddd-hh:mm:ss.ff' - UTC time - string
     # rt = 'SRT' or 'MED' or 'NOT' - string
+
+    if type_conn == 'SRTClient':
+        dt = datetime.fromisoformat(datehour.replace('Z', '+00:00'))
+        datehour = dt.strftime('%Y-%j-%H:%M:%S.%f')
 
     rt_loc = slr_station(rt)[0]              #EarthLocation.of_site(rt)
     local = pytz.timezone('Europe/Rome')
@@ -56,16 +59,19 @@ def loc_time(datehour, rt):
         h_lst_str = '0' + str(h_lst)
     else:
         h_lst_str = str(h_lst)
+    #h_lst_str = f"{h_lst:02}"
 
     if m_lst < 10:
         m_lst_str = '0' + str(m_lst)
     else:
         m_lst_str = str(m_lst)
+    #m_lst_str = f"{m_lst:02}"
 
     if s_lst < 10:
         s_lst_str = '0' + '%.3f' % s_lst
     else:
         s_lst_str = '%.3f' % s_lst
+    #s_lst_str = f"{s_lst:02}"
 
     lst_string = h_lst_str + ':' + m_lst_str + ':' + s_lst_str
 
@@ -153,7 +159,11 @@ def _sunmoon_evo(date_t, r_t, delta):
 
     altaz = AltAz(obstime=dt_utc, location=rt_loc)
 
-    with solar_system_ephemeris.set('./utilities/de441.bsp'):                                                            # jpl DE441
+    bsp_dir = os.path.dirname(os.path.abspath(__file__))
+    file_bsp = os.path.join(bsp_dir, 'de442s.bsp')
+
+    with solar_system_ephemeris.set(file_bsp):#'./de441.bsp'):                                                         # jpl DE441
+    #with solar_system_ephemeris.set('./utilities/de441.bsp'):                                                  # jpl DE441
         sole = get_body('sun', dt_utc, rt_loc)
         luna = get_body('moon', dt_utc, rt_loc)
 
@@ -168,18 +178,18 @@ def _sunmoon_evo(date_t, r_t, delta):
     return ref, result
 
 
-def sunmoon_evo(delta, date_t, r_t, step_t):
+def sunmoon_evo(delta, date_t, r_t, step_t, type_conn):
     # date_t -------- 'yyyy-ddd-hh:mm:ss.fff', string (DISCOS output)
     # r_t ----------- 'SRT', string
     # delta --------- duration of the solar map [in units of hours, float]
     # step_t -------- step time [in units of minutes, int]
 
-    delta_min = 0.5*delta*60                                                                                       # delta in units of minutes
+    delta_min = 0.5*delta*60                                                                                   # delta in units of minutes
     step_t_min = int(step_t)
 
     loc_site = slr_station(r_t)[0]
 
-    time0_loc, time_sid, rt_loc, time0_utc, lst_str = loc_time(date_t, r_t)
+    time0_loc, time_sid, rt_loc, time0_utc, lst_str = loc_time(date_t, r_t, type_conn)
     
     time_range = np.arange(-delta_min, delta_min+0.1, step_t_min)                                                              # I consider the range between -12 hours and +12 hours with respect to the local time of observation
 
@@ -188,7 +198,11 @@ def sunmoon_evo(delta, date_t, r_t, step_t):
 
     altaz = AltAz(obstime=dt_utc, location=rt_loc)
 
-    with solar_system_ephemeris.set('./utilities/de441.bsp'):                                                            # jpl DE441
+    bsp_dir = os.path.dirname(os.path.abspath(__file__))
+    file_bsp = os.path.join(bsp_dir, 'de442s.bsp')
+
+    with solar_system_ephemeris.set(file_bsp):#'./de441.bsp'):                                                            # jpl DE441
+    #with solar_system_ephemeris.set('./utilities/de441.bsp'):                                                            # jpl DE441
         sun_radec = get_body('sun', dt_utc, rt_loc)
         moon_radec = get_body('moon', dt_utc, rt_loc)
 
@@ -285,7 +299,7 @@ def horizon_eph(t_tot, obs_t, radiot, step_t):
             t = datetime.strptime(i, "%Y-%b-%d %H:%M:%S.%f")
         except:
             t = datetime.strptime(i, "%Y-%b-%d %H:%M:%S")
-        sun_eph_datetime = np.append(sun_eph_datetime,t)
+        sun_eph_datetime.append(t)
     sun_eph['datetime_str'] = sun_eph_datetime
     sun_eph['datetime_str'].name = 'epoch_datetime'
 
@@ -294,7 +308,7 @@ def horizon_eph(t_tot, obs_t, radiot, step_t):
             t = datetime.strptime(i, "%Y-%b-%d %H:%M:%S.%f")
         except:
             t = datetime.strptime(i, "%Y-%b-%d %H:%M:%S")
-        moon_eph_datetime = np.append(moon_eph_datetime,t)
+        moon_eph_datetime.append(t)
     moon_eph['datetime_str'] = moon_eph_datetime
     moon_eph['datetime_str'].name = 'epoch_datetime'
 
@@ -348,8 +362,13 @@ def skyfield_eph_now(dt_utc, radiot):
 
     loc_site = slr_station(radiot)[0]
 
-    sun_eph_radec, sun_eph_altaz, altaz = skyfield_ephem(dt_utc, loc_site, './utilities/de441.bsp', 's')
-    moon_eph_radec, moon_eph_altaz, altaz = skyfield_ephem(dt_utc, loc_site, './utilities/de441.bsp', 'm')
+    bsp_dir = os.path.dirname(os.path.abspath(__file__))
+    file_bsp = os.path.join(bsp_dir, 'de442s.bsp')
+
+    #sun_eph_radec, sun_eph_altaz, altaz = skyfield_ephem(dt_utc, loc_site, './utilities/de441.bsp', 's')
+    #moon_eph_radec, moon_eph_altaz, altaz = skyfield_ephem(dt_utc, loc_site, './utilities/de441.bsp', 'm')
+    sun_eph_radec, sun_eph_altaz, altaz = skyfield_ephem(dt_utc, loc_site, file_bsp, 's')#    './de441.bsp', 's')
+    moon_eph_radec, moon_eph_altaz, altaz = skyfield_ephem(dt_utc, loc_site, file_bsp, 'm')#  './de441.bsp', 'm')
 
     # angle in decimal mode
     sun_ref_eph_radec = SkyCoord(sun_eph_radec.ra.value, sun_eph_radec.dec.value, frame='icrs', unit='deg')
@@ -387,7 +406,14 @@ def skyfield_eph(t_tot, obs_t, radiot, step_t):
         altaz = AltAz(obstime=i, location=loc_site)
         fine_altaz.append(altaz)
         tool_sun_ra, tool_sun_dec, tool_sun_alt, tool_sun_az, tool_moon_ra, tool_moon_dec, tool_moon_alt, tool_moon_az = tool[2].ra.value, tool[2].dec.value, tool[3].alt.value, tool[3].az.value, tool[4].ra.value, tool[4].dec.value, tool[5].alt.value, tool[5].az.value
-        fine_sun_ra, fine_sun_dec, fine_sun_alt, fine_sun_az, fine_moon_ra, fine_moon_dec, fine_moon_alt, fine_moon_az = np.append(fine_sun_ra, tool_sun_ra), np.append(fine_sun_dec, tool_sun_dec), np.append(fine_sun_alt, tool_sun_alt), np.append(fine_sun_az, tool_sun_az), np.append(fine_moon_ra, tool_moon_ra), np.append(fine_moon_dec, tool_moon_dec), np.append(fine_moon_alt, tool_moon_alt), np.append(fine_moon_az, tool_moon_az)
+        fine_sun_ra.append(tool_sun_ra)
+        fine_sun_dec.append(tool_sun_dec)
+        fine_sun_alt.append(tool_sun_alt)
+        fine_sun_az.append(tool_sun_az)
+        fine_moon_ra.append(tool_moon_ra)
+        fine_moon_dec.append(tool_moon_dec)
+        fine_moon_alt.append(tool_moon_alt)
+        fine_moon_az.append(tool_moon_az)
 
     # angle in decimal mode
     sun_eph_radec = SkyCoord(fine_sun_ra, fine_sun_dec, frame='icrs', unit='deg')
@@ -458,7 +484,7 @@ def calc_angdist_radec(date_t, r_t, radec_pnt, radec_source, delta, step_t, qual
     return ang_sep_pnt_sun2rt, ang_sep_source_sun2rt, ang_sep_pnt_moon2rt, ang_sep_source_moon2rt, tool
 
 
-def calc_angdist_altaz(date_t, r_t, altaz_pnt, altaz_source, delta, step_t, quality):
+def calc_angdist_altaz(date_t, r_t, altaz_pnt, altaz_source, delta, step_t, quality, type_conn):
     # r_t ----------- 'SRT', string
     # date_t -------- 'yyyy-ddd-hh:mm:ss.fff', string
     # altaz_pnt ----- SkyCoord element (alt-az, in units of deg)
@@ -467,10 +493,10 @@ def calc_angdist_altaz(date_t, r_t, altaz_pnt, altaz_source, delta, step_t, qual
     # t_step -------- time step (ra-dec, in units of minutes), float
     # quality ------- quality of the analysis (1 = astropy/JPL-NASA [LQ-fast] ; 2 = Horizons JPL-NASA [HQ-slow])
     
-    time0_loc, time_sid, rt_loc, time0_utc, lst_str = loc_time(date_t, r_t)
+    time0_loc, time_sid, rt_loc, time0_utc, lst_str = loc_time(date_t, r_t, type_conn)
 
     if quality == 1:
-        tool = sunmoon_evo(delta, date_t, r_t, step_t)
+        tool = sunmoon_evo(delta, date_t, r_t, step_t, type_conn)
         sun_eph_radec, sun_eph_altaz, moon_eph_radec, moon_eph_altaz, ref0 = tool[0], tool[1], tool[2], tool[3], tool[5][0]
         sun_ref_eph_radec, sun_ref_eph_altaz, moon_ref_eph_radec, moon_ref_eph_altaz = ref0[0], ref0[1], ref0[2], ref0[3]
     elif quality == 2:

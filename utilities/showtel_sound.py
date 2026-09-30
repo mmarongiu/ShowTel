@@ -1,6 +1,25 @@
-from pydub import AudioSegment
-from pydub.playback import play
 from gtts import gTTS
+import os, pygame, time
+
+
+def _play_audio(path_sound):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    sound_path = os.path.join(current_dir, path_sound)
+    pygame.mixer.init()
+    pygame.mixer.music.load(sound_path)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        time.sleep(0.1)
+
+
+def play_audio(path_sound):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    sound_path = os.path.join(current_dir, path_sound)
+    if not pygame.mixer.get_init():
+        pygame.mixer.init()
+    pygame.mixer.music.load(sound_path)
+    pygame.mixer.music.play()
+
 
 def voice_create(frase, language):
     voice = gTTS(text=frase, lang=language)
@@ -10,7 +29,7 @@ def voice_create(frase, language):
     return v_out
 
 
-def sound_sys():
+def _sound_sys():
     alarm0 = AudioSegment.from_wav("./sound/warning_alarm.wav")
     v_alarm = alarm0[:2000]                     # first 2 seconds
 
@@ -33,7 +52,7 @@ def sound_sys():
     return v_alarm, v_close, v_failure, v_disconnected, v_connected
 
 
-def sound_alarm(filename, time):
+def _sound_alarm(filename, time):
     # time = int in units of seconds
     delta = int(int(time)*1000)
     alarm0 = AudioSegment.from_wav(filename)
@@ -42,7 +61,7 @@ def sound_alarm(filename, time):
     return v_alarm
 
 
-def sound_voice(filename):
+def _sound_voice(filename):
     v_out = AudioSegment.from_mp3(filename)
 
     return v_out

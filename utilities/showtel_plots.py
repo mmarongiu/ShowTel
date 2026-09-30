@@ -77,27 +77,41 @@ def plot_radar(dir_out, time_ref, nomesource, pos_live, pos_comm, res0, res1, al
             ax1.fill_between(np.arange(-200, 200, 10), 6, color='y', alpha=0.2)
             ax1.fill_between(np.arange(-200, 200, 10), 87, 90, color='r', alpha=0.2)
             if isinstance(rfi_tab, str) == False:
-                for i in rfi_freq:
-                    if i['az_min'] >= 180:
-                        az_min = i['az_min']-360
-                    else:
-                        az_min = i['az_min']
-                    if i['az_max'] >= 180:
-                        az_max = i['az_max']-360
-                    else:
-                        az_max = i['az_max']
+                #for i in rfi_freq:
+                #    if i['az_min'] >= 180:
+                #        az_min = i['az_min']-360
+                #    else:
+                #        az_min = i['az_min']
+                #    if i['az_max'] >= 180:
+                #        az_max = i['az_max']-360
+                #    else:
+                #        az_max = i['az_max']
                     
-                    if (i['az_min'] < 180) and (i['az_max'] >= 180):
-                        az_arr = [[az_min, 180], [-180, az_max]]
-                        el_arr = [i['el_min'], i['el_max']]
-                        for ii in az_arr:
-                            ax1.fill_between(np.arange(ii[0], ii[1],0.1), el_arr[0], el_arr[1], color='b', alpha=0.5)
-                    elif (i['az_min'] == 180) and (i['az_max'] >= 180):
-                        az_arr = [-180, az_max]
-                        el_arr = [i['el_min'], i['el_max']]
-                        ax1.fill_between(np.arange(az_arr[0], az_arr[1], 0.1), el_arr[0], el_arr[1], color='b', alpha=0.5)
+                #    if (i['az_min'] < 180) and (i['az_max'] >= 180):
+                #        az_arr = [[az_min, 180], [-180, az_max]]
+                #        el_arr = [i['el_min'], i['el_max']]
+                #        for ii in az_arr:
+                #            ax1.fill_between(np.arange(ii[0], ii[1],0.1), el_arr[0], el_arr[1], color='b', alpha=0.5)
+                #    elif (i['az_min'] == 180) and (i['az_max'] >= 180):
+                #        az_arr = [-180, az_max]
+                #        el_arr = [i['el_min'], i['el_max']]
+                #        ax1.fill_between(np.arange(az_arr[0], az_arr[1], 0.1), el_arr[0], el_arr[1], color='b', alpha=0.5)
+                #    else:
+                #        ax1.fill_between(np.arange(az_min, az_max, 0.1), i['el_min'], i['el_max'], color='b', alpha=0.5)
+
+                def wrap_az(az):          # Normalizza l'azimut da [0, 360] a [-180, 180]
+                    return az - 360. if az >= 180. else az
+
+                for i in rfi_freq:
+                    az_min = wrap_az(i['az_min'])
+                    az_max = wrap_az(i['az_max'])
+                    el_low, el_high = i['el_min'], i['el_max']
+
+                    if i['az_min'] < 180 <= i['az_max']:
+                        ax1.axvspan(az_min, 180., el_low/90., el_high/90., color='b', alpha=0.5)
+                        ax1.axvspan(-180., az_max, el_low/90., el_high/90., color='b', alpha=0.5)
                     else:
-                        ax1.fill_between(np.arange(az_min, az_max, 0.1), i['el_min'], i['el_max'], color='b', alpha=0.5)
+                        ax1.axvspan(az_min, az_max, el_low/90., el_high/90., color='b', alpha=0.5)
 
         elif ns == 'S':
             ax1.text(325, 83, 'South', fontsize=20, color='green')
@@ -158,25 +172,17 @@ def plot_radar(dir_out, time_ref, nomesource, pos_live, pos_comm, res0, res1, al
     ax2.set_facecolor('k')
     ax2.grid(color='g')
 
-    lst = []
-    for w in res1[:,0]:
-        u0 = w.sidereal_time('mean')
-        lst.append(u0)
+    times = res1[:, 0]
+    lst = [t.sidereal_time('mean') for t in times]
 
-    new_tick_locations1, new_tick_locations2 = [], []
-    for i in res1[:,0][::8]:
-        new_tick_locations1 = np.append(new_tick_locations1, i)
-        uu = i.sidereal_time('mean')
-        new_tick_locations2.append(uu.value)
+    selected_times = res1[:, 0][::8]
+    new_tick_locations1 = selected_times
+    new_tick_locations2 = [t.sidereal_time('mean').value for t in selected_times]
 
-    time_datetime = []
-    for i in res1[:,0]:
-        time_datetime.append(i.datetime)
+    time_datetime = [t.datetime for t in times]
 
     if sun_mode == 0:
-        time_source_datetime = []
-        for i in time_source_evo:
-            time_source_datetime.append(i.datetime)
+        time_source_datetime = [t.datetime for t in time_source_evo]
 
         ax2.plot(time_source_datetime , altaz_comm[1].astype('float64'), marker='.', color='w', markersize=2, linestyle='none')
         ax2.plot(time_ref.datetime, pos_comm[1], marker='o', color='w', markersize=10, linestyle='none', label=nomesource)
@@ -196,9 +202,7 @@ def plot_radar(dir_out, time_ref, nomesource, pos_live, pos_comm, res0, res1, al
     ax2.set_xlim((tempo_min, tempo_max))
     ax2.set_ylim((0,90))
 
-    label1 = []
-    for i in new_tick_locations1:
-        label1 = np.append(label1,str(i)[11:16])
+    label1 = [str(i)[11:16] for i in new_tick_locations1]
     
     ax2.set_xticks(time_datetime[::8], labels=label1, fontsize=16, color='g')#, rotation=45)
     ax2.minorticks_off()

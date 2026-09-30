@@ -1,4 +1,5 @@
-import socket
+import socket, time
+from discos_client import SRTClient
 
 ip_add_discos = '192.168.56.200'
 port_discos = 30000
@@ -18,6 +19,12 @@ def connect_port(ip_add, port):
         conn = 0
 
     return s, conn
+
+
+def connect_port_srtclient():
+    s = SRTClient("mount", "antenna", "receivers", "backends", "scheduler")
+
+    return s
 
 
 def connect_status_discos(skt):
@@ -43,6 +50,18 @@ def connect_status_seadas(skt):
             sts = 1
     except:
         sts = 0
+    return sts
+
+
+def connect_status_srtclient(s_arr):
+    try:
+        if (s_arr['Socket'] == 'False') or (s_arr['Socket'] == 'None') or (s_arr['SysUTC'] == 'None'):
+            sts = 0
+        else:
+            sts = 1
+    except:
+        sts = 0
+
     return sts
 
 
