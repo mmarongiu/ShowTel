@@ -11,39 +11,21 @@ Tool for the real-time monitoring of the operations of a radio telescope during 
 
 
 
-#### Anaconda and virtual environment (recommended)
+#### Pyenv and virtual environment (recommended)
 We strongly suggest to install the
-[Anaconda](https://www.anaconda.com) Python distribution.
-Once the installation has finished, you should have a working `conda`
-command in your shell. First of all, create a new environment:
+[Pyenv](https://github.com/pyenv/pyenv) Python distribution.
+Once the installation is complete, you should create a new Python environment:
 
-    $ conda create -n py3 python=3
-
-load the new environment:
-
-    $ source activate py3
-
-and install the dependencies (including a few optional but recommended):
-
-    (py3) $ conda install numpy, astropy, datetime, pytz, time, sched, threading, socket, os, tkinter, tkmacosx, PIL, gtts
-
-and
-
-    (py3) $ sudo apt-get install ffmpeg libavcodec-extra
-    (py3) $ pip install pydub
+    $ pyenv install 3.13.4
 
 
 
 ##### Download of the de441.bsp ephemeris
-You must to download the de441.bsp ephemeris following this procedure in ipython environment:
+You must to download the de442s.bsp ephemeris from this link:
 
-    In [1]: from astropy.coordinates import solar_system_ephemeris
+    https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
 
-and
-
-    In [2]: solar_system_ephemeris.set("ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de441.bsp")
-
-Once you downloaded this file (3.3 GB), you must put this file in the directory "utilities".
+Once you downloaded this file (31 MB), you must put this file in the directory "utilities".
 
 
 
@@ -51,31 +33,30 @@ Once you downloaded this file (3.3 GB), you must put this file in the directory 
 
 Clone the repository:
 
-    (py3) $ cd /my/software/directory/
-    (py3) $ git clone https://github.com/mmarongiu/ShowTel.git
+    $ cd /my/software/directory/
+    $ git clone https://github.com/mmarongiu/ShowTel.git
 
 or if you have deployed your SSH key to Github:
 
-    (py3) $ git clone git@github.com:mmarongiu/ShowTel.git
+    $ git clone git@github.com:mmarongiu/ShowTel.git
 
-Then:
+Then go to the main directory and type:
 
-    (py3) $ cd Showtel
-    (py3) $ python showtel_v03.py
+    $ pip install .
 
 
 ### Updating
 
 To update the code, simply run `git pull` and reinstall:
 
-    (py3) $ git pull
+    $ git pull
 
 
 ### Contribution guidelines
 
 See the file CONTRIBUTING.md for more details.
 
-This code is written in Python 3.11+. Tests run at each commit during Pull Requests, so it is easy to single out points in the code that break this compatibility.
+This code is written in Python 3.13+. Tests run at each commit during Pull Requests, so it is easy to single out points in the code that break this compatibility.
 
 
 ### If you use this code
