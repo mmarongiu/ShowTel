@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ShowTel"
+version = "0.4.0"
+description = "Solar monitoring based on Python client for DISCOS"
+authors = [{ name = "Marco Marongiu", email = "marco.marongiu@inaf.it" }]
+license = { text = "GPL-3.0-only" }
+requires-python = ">=3.11"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [ 
+	     "astropy>=8.0.0",
+	     "astroquery>=0.4.10",
+	     "discos_client>=0.2.0",
+	     "gTTS>=2.5.4",
+	     "matplotlib>=3.11.0",
+	     "numpy>=2.5.0",
+	     "Pillow>=12.2.0",
+	     "pygame>=2.6.1",
+	     "pytz>=2025.2",
+	     "skyfield>=1.53",
+	     "tkmacosx>=1.0.5"
+	     ]
+
+[tool.setuptools]
+packages = ["utilities"]
+
+[project.scripts]
+showtel = "utilities.showtel_main:main"                         # main è il nome della funzione che io lancio con ShowTel
+
+[tool.setuptools.package-data]
+utilities = ["*.png", "*.dat", "*.txt", "sound/*.mp3", "sound/*.wav", "sound/*", "*.bsp"]
+
+#[tool.setuptools.package-data]
+#discos_client = ["schemas/**", "servers/**"]
+
+#[project.optional-dependencies]
+#test = ["coverage", "prospector", "jsonschema", "referencing"]                                  # dipendenze opzionali
+#docs = ["sphinx<9,>=6", "sphinx-rtd-theme", "sphinx-autodoc-typehints", "sphinx-jsonschema"]    # dipendenze opzionali

@@ -1,0 +1,11 @@
+astropy==7.1.0
+astroquery==0.4.10
+discos_client==0.2.0
+gTTS==2.5.4
+matplotlib==3.11.0
+numpy==2.5.0
+Pillow==12.2.0
+pygame==2.6.1
+pytz==2025.2
+skyfield==1.53
+tkmacosx==1.0.5
